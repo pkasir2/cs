@@ -1,0 +1,55 @@
+func (d *Decoder) {{.MethodName}}() (retValue *{{.CapMethodName}}, error os.Error) {
+     var returnValue {{.CapMethodName}}
+     {{$capMethodName := .CapMethodName}}
+     id, err := d.uint64()
+     if err != nil {
+     	return nil, err
+     }
+     d.indexToValue = append(d.indexToValue, retValue)	
+     index := len(d.indexToValue) - 1
+     switch *id{
+     {{range .TypeCases}}
+     case {{.Id}}:
+     	{{$decodingValue := .EncodeValueMethod | isdecodingValue}}
+	p, err := d.{{.EncodeValueMethod}}()	
+	if err != nil {
+     	   return nil, err
+     	}
+     	returnValue = ({{$capMethodName}})(*p)
+     {{end}}
+     default:
+	e := NewSayIError("Wrong type used as Any")
+	return retValue, e
+     }
+     d.indexToValue[index] = retValue		
+     return &returnValue, nil
+}
+
+func (d *Decoder) {{.MethodName}}Internal() (retValue *{{.CapMethodName}}, error os.Error) {
+     var returnValue {{.CapMethodName}}
+     {{$capMethodName := .CapMethodName}}
+     id, err := d.uint64()
+     if err != nil {
+     	return nil, err
+     }
+     switch *id{
+     {{range .TypeCases}}
+     case {{.Id}}:
+     	{{$decodingValue := .EncodeValueMethod | isdecodingValue}}
+	p, err := d.{{.EncodeInternalMethod}}()
+	if err != nil {
+     	   return nil, err
+     	}
+     	returnValue = ({{$capMethodName}})(*p)
+     {{end}}
+     default:
+	e := NewSayIError("Wrong type used as Any")
+	return retValue, e
+     }
+     return &returnValue, nil
+}
+
+func (d *Decoder) {{.CapMethodName}}() (retValue *{{.CapMethodName}}, error os.Error) {
+     return d.{{.MethodName}}()
+}
+

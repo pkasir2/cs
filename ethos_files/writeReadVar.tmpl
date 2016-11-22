@@ -1,0 +1,47 @@
+func WriteVar{{.MethodName | upperCase}}(fd syscall.Fd, filename string, v {{.TypeName}}) (syscall.Status){
+     writer := bytes.NewBufferString("")
+     e := NewEncoder(writer)
+     e.{{.MethodName}}({{.AmpSymbol}}v)
+     e.Flush()
+     return syncWriteVar(fd, filename, writer.Bytes())
+}
+
+func Write{{.MethodName | upperCase}}(fd syscall.Fd, v {{.TypeName}}) (syscall.Status){
+     writer := bytes.NewBufferString("")
+     e := NewEncoder(writer)
+     e.{{.MethodName}}({{.AmpSymbol}}v)
+     e.Flush()
+     return syncWrite(fd, writer.Bytes())
+}
+
+func ReadVar{{.MethodName | upperCase}}(fd syscall.Fd, filename string) ({{.TypeName}}, syscall.Status){
+     var r {{.TypeName}}
+     data, status := syncReadVar(fd, filename)
+     if status != syscall.StatusOk {
+	return r, status
+     }
+     reader := bytes.NewBuffer(data)
+     d := NewDecoder(reader)
+     v, err := d.{{.MethodName}}()
+     if err != nil {
+     	return r, syscall.StatusFail
+     }
+     return {{if .IsAny}}v{{else}}*v{{end}}, syscall.StatusOk
+}
+
+func Read{{.MethodName | upperCase}}(fd syscall.Fd) ({{.TypeName}}, syscall.Status){
+     var r {{.TypeName}}
+     data, status := syncRead(fd)
+     if status != syscall.StatusOk {
+	return r, status
+     }
+     reader := bytes.NewBuffer(data)
+     d := NewDecoder(reader)
+     v, err := d.{{.MethodName}}()
+     if err != nil {
+     	return r, syscall.StatusFail
+     }
+     return {{if .IsAny}}v{{else}}*v{{end}}, syscall.StatusOk
+}
+
+

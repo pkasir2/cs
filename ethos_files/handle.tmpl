@@ -1,0 +1,54 @@
+func (d *Decoder) Handle{{.InterfaceName}}(e *Encoder) (error os.Error){
+     d.ReadAll()
+     methodId, err := d.uint64()
+     if err != nil {
+     	return err		
+     }
+     switch *methodId{
+     	    {{range .Cases}}
+	    case {{.MethodId}}:
+	    	 /* FIXME: Temporarily place reset here. We also reset in ReadAll calls. This 
+		  *        should probably go in one place: each type decoder, but we need
+		  *        to be able to differentiate between an application-called decode
+		  *        and a decode of internal elements. The latter case should not 
+		  *        call reset. */
+	    	 d.reset()
+	    	 {{if .CallType}}
+		 cid, err := d.uint64()
+     		 if err != nil {
+		      	return err		
+		 }
+		{{range $index, $elmt := .Args}}
+		{{.ArgName}}, err{{$index}} := d.{{.TypeNameNonCap}}()
+		if err{{$index}} != nil {
+		   return err{{$index}}
+		}
+		{{end}}
+		{{if .HasReturn}}
+		{{.LocalFuncName}}(e, *cid, {{range $index, $Arg := .Args}}{{if $index}},{{$Arg.ArgName}}{{else}}{{$Arg.ArgName}}{{end}}{{end}})
+		{{else}}
+		{{.LocalFuncName}}(e, *cid, {{range $index, $Arg := .Args}}{{if $index}},{{$Arg.ArgName}}{{else}}{{$Arg.ArgName}}{{end}}{{end}})
+		{{end}}
+		{{else}}
+		{{if .HasReturn}}
+		cid, err = d.uint64()
+     		 if err != nil {
+		      	return err		
+		 }
+		{{range $index, $elmt := .Args}}
+		{{.ArgName}}, err{{$index}} := d.{{.TypeNameNonCap}}()
+		if err{{$index}} != nil {
+		   return err{{$index}}
+		}
+		{{end}}
+		{{.LocalFuncName}}(e, *cid, {{range .Args}},{{.ArgName}}{{end}})
+		{{end}}
+		{{end}}
+	    {{end}}
+	    default:
+	    	 e := NewSayIError("Wrong MethodID")
+		 return e
+     }
+     return nil
+}
+

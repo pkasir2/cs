@@ -1,0 +1,35 @@
+func (e *Encoder) {{.MethodName}}Ptr({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     if nil == {{$argName}} {
+     	err = e.uint8(pNIL)
+	if err != nil {
+	   return err
+	}
+	return nil
+     }
+     /*{{$argName}}Value := reflect.Indirect(reflect.ValueOf({{$argName}})).Elem()*/
+     if index, ok, error := e.t.PointerCheck(unsafe.Pointer({{$argName}}), "{{.HashValue}}", uint64(unsafe.Sizeof({{$argName}}))); ok {
+     	if error != nil {
+	   return error
+	}
+     	err = e.uint8(pIDX)
+	if err != nil {
+	   return err
+	}
+	err = e.uint32(index)
+	if err != nil {
+	   return err
+	}
+     } else {
+       err = e.uint8(pVAL)
+       if err != nil {
+	   return err
+	}
+       err = e.{{.Argument.TypeNameNonCap}}Internal({{.Argument.ArgName}})
+       if err != nil {
+	   return err
+	}
+     }
+     return nil
+     
+}

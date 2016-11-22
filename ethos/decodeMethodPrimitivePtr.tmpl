@@ -1,0 +1,27 @@
+func (d *Decoder) {{.MethodName}}Ptr() ({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameNonCap}}, error os.Error){
+     {{$argName := .Argument.ArgName}}		      
+     t, err := d.uint8()
+     if err != nil {
+     	return nil, err
+     }
+     switch *t{
+     	    case pNIL:
+	    	 {{$argName}} = nil
+	    case pIDX:
+	    	 i, err := d.uint32()
+		 if err != nil {
+		    return nil, err
+		 }
+		elem := d.indexToValue[*i] 
+		{{$argName}} = elem.({{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameNonCap}})
+	    case pVAL:
+	    	 p, err := d.{{.Argument.TypeNameNonCap}}()
+		 if err != nil {
+		    return nil, err
+		 }
+	    	 {{$argName}} = (p)
+		 d.indexToValue = append(d.indexToValue, {{$argName}})
+     }
+     return {{$argName}}, nil
+}
+

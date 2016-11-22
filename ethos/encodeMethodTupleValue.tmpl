@@ -1,0 +1,55 @@
+func (e *Encoder) {{.MethodName}}({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     if len({{$argName}}) == 0 {
+     	{{if .SliceOfBytes}}
+	err = e.SliceOfBytes({{$argName}}[:])
+	if err != nil {
+	   return err
+	}
+	{{else}}
+	{{if .Slice}}
+     	err = e.uint32(uint32(len({{$argName}})))
+	if err != nil {
+	   return err
+	}
+	{{end}}
+     	for _, ele := range {{$argName}} {
+	    {{range .MethodNameAndVar}}
+       	    err = e.{{.MethodName}}({{if .ByPtr}}&{{end}}ele)
+	    if err != nil {
+	       return err
+	    }
+       	    {{end}} 
+	}
+	{{end}}
+	return nil
+     }
+     //{{$argName}}Value := reflect.ValueOf(&{{$argName}}).Elem()
+     if _, _, error := e.t.PointerCheck(unsafe.Pointer(&{{$argName}}[0]), "{{.HashValue}}", uint64(len({{$argName}}))); error == nil{
+     	{{if .SliceOfBytes}}
+	err = e.SliceOfBytes({{$argName}}[:])
+	if err != nil {
+	   return err
+	}
+	{{else}}
+	{{if .Slice}}
+     	err = e.uint32(uint32(len({{$argName}})))
+	if err != nil {
+	   return err
+	}
+	{{end}}
+     	for _, ele := range {{$argName}} {
+	    {{range .MethodNameAndVar}}
+       	    err = e.{{.MethodName}}({{if .ByPtr}}&{{end}}ele)
+	    if err != nil {
+	       return err
+	    }
+       	    {{end}} 
+	}
+	{{end}}
+     } else {
+       return error
+     }    
+     return nil
+}
+

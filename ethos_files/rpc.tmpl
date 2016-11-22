@@ -1,0 +1,22 @@
+func (e *Encoder) {{.MethodName}}(cid uint64 {{range .Args}} ,{{.ArgName}} {{if .Ptr}}*{{end}}{{if .PackageName}}{{.PackageName}}.{{end}}{{.TypeNameCap}}{{end}}) (err os.Error){
+     err = e.uint64({{.MethodId}})
+     if err != nil {
+     	return err
+     }
+     err = e.uint64(cid)
+     if err != nil {
+     	return err
+     }
+     {{range .Args}}
+     err = e.{{.TypeNameNonCap}}({{if .Ptr}}{{end}}{{.ArgName}})
+     if err != nil {
+     	return err
+     }
+     {{end}}
+     err = e.Flush()
+     if err != nil {
+     	return err
+     }
+     return err
+}
+

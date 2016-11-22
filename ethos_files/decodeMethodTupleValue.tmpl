@@ -1,0 +1,36 @@
+func (d *Decoder) {{.MethodName}}() ({{.Argument.ArgName}} *{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}, error os.Error){
+     {{$argName := .Argument.ArgName}}
+     var val{{$argName}} {{.Argument.TypeNameCap}}
+     {{if .Slice}}
+     l, err := d.uint32()
+     if err != nil {
+     	return &val{{$argName}}, err
+     }
+     length := *l
+     val{{$argName}} = make({{.Argument.TypeNameCap}}, length)
+     {{else}}
+     length := {{.ArraySize}}
+     {{end}}
+     {{if .SliceOfBytes}}
+     error = d.SliceOfBytes(val{{$argName}}[:], length)
+     if error != nil {
+     	return &val{{$argName}}, error
+     }
+     {{else}}
+     i := 0
+     for ; length > 0 ; length-- {
+     	 {{range .MethodNameAndVar}}
+	 {{$decodingValue := .MethodName | isdecodingValue}}
+	 p, err := d.{{.MethodName}}()
+	 if err != nil {
+	    return &val{{$argName}}, err
+	 }
+	 val{{$argName}}[i] = {{if $decodingValue}}*{{end}}p
+     	 {{end}}
+	 i++ 
+     }
+     {{end}}
+     d.indexToValue = append(d.indexToValue, {{$argName}})
+     return &val{{$argName}}, nil
+}
+

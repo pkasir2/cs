@@ -1,0 +1,48 @@
+func (e *Encoder) {{.MethodName}}(a interface{}) (err os.Error){
+     switch a.(type) {
+     {{range .TypeCases}}
+     case {{.TypeName}}:
+	err = e.uint64({{.Id}})
+	if err != nil {
+	   return err
+	}
+     	t := a.({{.TypeName}})
+	err = e.{{.EncodeValueMethod}}({{if .Ptr}}&{{end}}t)
+	if err != nil {
+	   return err
+	}
+     {{end}}
+     default:
+	v := reflect.ValueOf(a)
+     	e := NewSayIError("Wrong type used as Any " + v.Type().Name())
+	return e
+     }
+     return nil
+}
+
+func (e *Encoder) {{.MethodName}}Internal(a interface{}) (err os.Error){
+     switch a.(type) {
+     {{range .TypeCases}}
+     case {{.TypeName}}:
+	err = e.uint64({{.Id}})
+	if err != nil {
+	   return err
+	}
+     	t := a.({{.TypeName}})
+	err = e.{{.EncodeInternalMethod}}({{if .Ptr}}&{{end}}t)
+	if err != nil {
+	   return err
+	}
+     {{end}}
+     default:
+	v := reflect.ValueOf(a)
+	e := NewSayIError("Wrong type used as Any " + v.Type().Name())
+	return e
+     }
+     return nil
+}
+
+func (e *Encoder) {{.CapMethodName}}(a interface{}) (err os.Error){
+     return e.{{.MethodName}}(a)
+}
+

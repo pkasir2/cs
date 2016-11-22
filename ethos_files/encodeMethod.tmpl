@@ -1,0 +1,19 @@
+func (e *Encoder) {{.MethodName}}({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     if _, _, error := e.t.PointerCheck(unsafe.Pointer({{$argName}}), "{{.HashValue}}", uint64(unsafe.Sizeof({{if .Argument.Ptr}}*{{end}}{{$argName}}))); error == nil {
+     	{{range .MethodNameAndVar}}
+       err = e.{{.MethodName}}({{if .Alias}}{{if .ByPtr}}&{{end}}{{.Var}}{{else}}{{if .ByPtr}}&{{end}}{{$argName}}.{{.Var}}{{end}})
+       if err != nil {
+       	  return err
+       }
+       {{end}} 
+     } else {
+       return error
+     }   
+     return nil
+}
+
+func (e *Encoder) {{.MethodName | upperCase}} ({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     return e.{{.MethodName}}({{.Argument.ArgName}})
+}
+

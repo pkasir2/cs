@@ -1,0 +1,9 @@
+{{if .Alias}}
+type {{.TypeName}} {{.AliasName}}
+{{else}}
+type {{.TypeName}} struct {
+     {{range .Members}}
+     {{.DataName}} {{.TypeName}}
+     {{end}}
+}
+{{end}}

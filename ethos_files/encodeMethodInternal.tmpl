@@ -1,0 +1,12 @@
+func (e *Encoder) {{.MethodName}}Internal({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     {{range .MethodNameAndVar}}
+     	     err = e.{{.MethodName}}({{if .Alias}}{{if .ByPtr}}&{{end}}{{.Var}}{{else}}{{if .ByPtr}}&{{end}}{{$argName}}.{{.Var}}{{end}})
+	     if err != nil {
+	     	return err
+	     }
+     {{end}}
+     return nil
+}
+
+

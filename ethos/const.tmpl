@@ -1,0 +1,10 @@
+const(
+	{{range $index, $funcName := .FuncNames}}
+	{{if $index}}
+	{{.}}
+	{{else}}
+	{{.}} = iota
+	{{end}}
+	{{end}}
+)
+

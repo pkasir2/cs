@@ -1,0 +1,180 @@
+func syncImport (listeningFd syscall.Fd) (user []byte, netFd syscall.Fd, status syscall.Status) {
+        eventId, status := syscall.Import (listeningFd)
+        if status != syscall.StatusOk {
+                return nil, 0, status // FIXME: How to return invalid Fd with bad status?
+        }
+
+        user, netFd, status = syscall.BlockAndRetire (eventId)
+
+        return user, netFd, status
+}
+
+func syncBeep(time syscall.Time64) (status syscall.Status) {
+        eventId, status := syscall.Beep(time)
+        if status != syscall.StatusOk {
+                return status
+        }
+
+        _, _, status = syscall.BlockAndRetire(eventId)
+
+        return status
+}
+
+func syncIpc (dir syscall.Fd, serviceName, hostName string, writeVal []byte) (fd syscall.Fd, status syscall.Status) {
+        eventId, status := syscall.Ipc (dir, serviceName, hostName, writeVal)
+        if status != syscall.StatusOk {
+                return 0, status // FIXME: How to return invalid Fd with bad status?
+        }
+
+        _, fd, status = syscall.BlockAndRetire (eventId)
+
+        return fd, status
+}
+
+func syncIpcRepeat(dir syscall.Fd, serviceName, hostName string, writeVal []byte) (fd syscall.Fd, status syscall.Status) {
+	var repeat int = 10	// repeat ipc 10 times
+	var waitTime syscall.Time64
+	waitTime = syscall.Time64(100000000)	// wait time is 100ms
+
+	fd, status = syncIpcRepeatSpecified(dir, serviceName, hostName, writeVal, repeat, waitTime)
+	return fd, status
+}
+
+func syncIpcRepeatSpecified(dir syscall.Fd, serviceName, hostName string, writeVal []byte, repeat int, waitTime syscall.Time64) (fd syscall.Fd, status syscall.Status) {
+	var eventId syscall.EventId;
+	for trials := 0; trials < repeat; trials++ {
+		eventId, status = syscall.Ipc(dir, serviceName, hostName, writeVal)
+		if status == syscall.StatusOk {
+			break;
+		} else {
+			time := syscall.GetTime();
+			time += waitTime;
+			syncBeep(time);
+		}
+	}
+
+	if status != syscall.StatusOk {
+		return 0, status // FIXME: How to return invalid Fd with bad status?
+	}
+
+	_, fd, status = syscall.BlockAndRetire(eventId)
+	return fd, status
+}
+
+func syncAdvertise (dir syscall.Fd, name string) (fd syscall.Fd, status syscall.Status) {
+        eventId, status := syscall.Advertise (dir, name)
+        if status != syscall.StatusOk {
+                return 0, status // FIXME: How to return invalid Fd with bad status?
+        }
+
+        _, fd, status = syscall.BlockAndRetire (eventId)
+
+        return fd, status
+}
+
+func syncOpenDirectoryPath(p string) (fd syscall.Fd, status syscall.Status) {
+     p = path.Clean (p) // Simplify, including dropping any trailing '/'.
+     if p == "/" {
+             return syscall.Fd(syscall.RootDirectory), syscall.StatusOk
+     }
+
+     dirFd, dirName, status := syncOpenPathLastDirectory (p)
+     if status != syscall.StatusOk {
+             return 0, status // FIXME: How to return invalid Fd with bad status?
+     }
+     return syncOpenDirectory (dirFd, dirName)
+}
+
+func syncOpenPathLastDirectory(p string) (dirFd syscall.Fd, fileName string, status syscall.Status) {
+        var start syscall.Fd
+        if path.IsAbs(p) {
+                start = syscall.RootDirectory
+        } else {
+                start = syscall.CurrentDirectory
+        }
+
+        nodes := strings.Split (p, "/")
+
+        if len (nodes) == 0 {        // i.e., ""
+                dirFd, fileName, status = 0, "", syscall.StatusInvalidFileName
+        } else {                     // i.e., /foo/bar...
+                dirFd   = start
+                parent := dirFd
+
+                for _, n := range nodes[:len(nodes) - 1] {
+                        if n == "" {
+                                continue
+                        }
+                        dirFd, status = syncOpenDirectory (parent, n)
+                        if status != syscall.StatusOk {
+                                return 0, "", status
+                        }
+
+                        if parent != syscall.RootDirectory {
+                                syscall.Close (parent)
+                        }
+
+                        parent = dirFd
+                }
+
+                fileName = nodes[len(nodes) - 1]
+        }
+
+        return dirFd, fileName, status
+}
+
+func syncOpenDirectory (dir syscall.Fd, name string) (fd syscall.Fd, status syscall.Status) {
+        eventId, status := syscall.OpenDirectory (dir, name)
+        if status != syscall.StatusOk {
+                return 0, status // FIXME: How to return invalid Fd with bad status?
+        }
+
+        _, fd, status = syscall.BlockAndRetire (eventId)
+
+        return fd, status
+}
+
+func syncWriteVar(fd syscall.Fd, name string, writeVal []byte) (status syscall.Status) {
+        eventId, status := syscall.WriteVar (fd, name, writeVal)
+        if status != syscall.StatusOk {
+                return status
+        }
+
+        _, _, status = syscall.BlockAndRetire (eventId)
+
+        return status
+}
+
+func syncReadVar(fd syscall.Fd, name string) (data []byte, status syscall.Status) {
+        eventId, status := syscall.ReadVar (fd, name)
+        if status != syscall.StatusOk {
+                return nil, status
+        }
+
+        data, _, status = syscall.BlockAndRetire (eventId)
+
+        return data, status
+}
+
+func syncWrite (fd syscall.Fd, writeVal []byte) (status syscall.Status) {
+        eventId, status := syscall.Write (fd, writeVal)
+        if status != syscall.StatusOk {
+                return status
+        }
+
+        _, _, status = syscall.BlockAndRetire (eventId)
+
+        return status
+}
+
+func syncRead (fd syscall.Fd) (data []byte, status syscall.Status) {
+        eventId, status := syscall.Read (fd)
+        if status != syscall.StatusOk {
+                return nil, status // FIXME: How to return invalid Fd with bad status?
+        }
+
+        data, _, status = syscall.BlockAndRetire (eventId)
+
+        return data, status
+}
+

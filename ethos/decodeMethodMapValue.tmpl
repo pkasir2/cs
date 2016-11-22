@@ -1,0 +1,39 @@
+func (d *Decoder) {{.MethodName}}() ({{.Argument.ArgName}} *{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}, error os.Error){
+     {{$argName := .Argument.ArgName}}
+     var val{{$argName}} {{.Argument.TypeNameCap}}
+     t, err := d.uint8()
+     if err != nil {
+     	return &val{{$argName}}, err
+     }
+     switch *t {
+     	    case pIDX:
+	    	 i, err := d.uint32()
+		 if err != nil {
+		    return &val{{$argName}}, err
+		 }
+	    	 m := d.m[*i]
+		 val{{$argName}} = m.({{.Argument.TypeNameCap}})
+   	    case pVAL:
+	    	 l, err := d.uint32()
+		 if err != nil {
+		    return &val{{$argName}}, err
+		 }
+		 length := *l
+     		 val{{$argName}} = make({{.Argument.TypeNameCap}})
+		 for ; length > 0 ; length-- {
+     	 	     {{range $index, $elmt := .MethodNameAndVar}}
+		     {{$decodingValue := .MethodName | isdecodingValue}}	
+		     p{{$index}}, err{{$index}} := d.{{.MethodName}}()
+		     if err{{$index}} != nil {
+		     	return &val{{$argName}}, err{{$index}}
+		     }
+	 	     {{.Var}} := {{if $decodingValue}}*{{end}}p{{$index}}
+     	 	     {{end}}
+		     val{{$argName}}[key] = ele
+     		 }    	 
+     }
+     d.m = append(d.m, val{{$argName}})
+     {{$argName}} = &val{{$argName}}
+     return {{$argName}}, nil
+}
+

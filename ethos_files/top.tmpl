@@ -1,0 +1,22 @@
+package {{.PackageName}}
+import(
+	"io"
+	"math"
+	"reflect"
+	"unsafe"
+	"ethos/llrb"
+	"os"
+	"bytes"
+	"encoding/hex"
+	"time"
+	{{range $pack := .ImportPacks}}
+	"{{$pack}}"
+	{{end}}
+)
+
+// FIXME: this is a place holder for bytes. bytes is only used when there is an any type
+var xxx = bytes.MinRead
+var yyy hex.InvalidHexCharError
+var sunday = time.Sunday // this needs to be remove after we fixed the sleep in Ipc and IpcWrite.
+
+

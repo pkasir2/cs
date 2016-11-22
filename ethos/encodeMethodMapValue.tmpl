@@ -1,0 +1,32 @@
+func (e *Encoder) {{.MethodName}}({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     if index, exists := e.MapCheck({{$argName}}); !exists{
+     	err = e.uint8(pVAL)
+	if err != nil {
+	   return err
+	}
+	err = e.uint32(uint32(len({{$argName}})))
+	if err != nil {
+	   return err
+	}
+     	for key, ele := range {{$argName}} {
+	    {{range .MethodNameAndVar}}
+       	    err = e.{{.MethodName}}({{if .ByPtr}}&{{end}}{{.Var}})
+	    if err != nil {
+	       return err
+	    }
+       	    {{end}} 
+	}
+     } else {
+       err = e.uint8(pIDX)
+       if err != nil {
+	   return err
+	}
+       err = e.uint32(uint32(index))
+       if err != nil {
+	   return err
+       }
+     } 
+     return nil    
+}
+

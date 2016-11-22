@@ -1,0 +1,19 @@
+func (e *Encoder) {{.MethodName}}Internal({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     //e.uint8(pVAL)
+     err = e.uint32(uint32(len({{$argName}})))
+     if err != nil {
+	   return err
+	}
+     for key, ele := range {{$argName}} {
+	 {{range .MethodNameAndVar}}
+       	 err = e.{{.MethodName}}({{if .ByPtr}}&{{end}}{{.Var}})
+	 if err != nil {
+	   return err
+	 }
+       	 {{end}} 
+    }
+    return nil
+}
+
+

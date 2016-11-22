@@ -1,0 +1,122 @@
+func Ipc(hostname string, serviceName string) (*Encoder, *Decoder, syscall.Status) {
+     serviceFd, status := syncOpenDirectoryPath("/services/" + serviceName)
+     if status != syscall.StatusOk {
+                  log.Fatalf ("Error calling OpenDirectory /services/%s: %v\n", serviceName, status)
+		  return nil, nil, status
+     }
+
+     sName := serviceName
+     for i:=len(serviceName)-1; i>=0; i-- {
+         if (serviceName[i]=='/') {
+      	   sName = serviceName[i+1:]
+      	}
+     }
+
+
+     netFd, status := syncIpcRepeat(serviceFd, sName, hostname, nil)
+     if status != syscall.StatusOk {
+                log.Fatalf ("Error calling Ipc: %v\n", status)
+	    return nil, nil, status	
+     }
+     writer := ethos.NewWriter(netFd)
+     reader := ethos.NewReader(netFd)
+     syscall.Close(serviceFd)
+     e := NewEncoder(writer)
+     d := NewDecoder(reader)
+     return e, d, syscall.StatusOk
+}
+
+func IpcWrite(hostname string, serviceName string, writeVal []byte) (*Encoder, *Decoder, syscall.Status) {
+     serviceFd, status := syncOpenDirectoryPath("/services/" + serviceName)
+     if status != syscall.StatusOk {
+                  log.Fatalf ("Error calling OpenDirectory /services/%s: %v\n", serviceName, status)
+		  return nil, nil, status
+     }
+
+     sName := serviceName
+     for i:=len(serviceName)-1; i>=0; i-- {
+         if (serviceName[i]=='/') {
+      	   sName = serviceName[i+1:]
+      	}
+     }
+
+
+     netFd, status := syncIpcRepeat(serviceFd, sName, hostname, writeVal)
+     if status != syscall.StatusOk {
+                log.Fatalf ("Error calling Ipc: %v\n", status)
+		return nil, nil, status
+     }
+     writer := ethos.NewWriter(netFd)
+     reader := ethos.NewReader(netFd)
+     syscall.Close(serviceFd)
+     e := NewEncoder(writer)
+     d := NewDecoder(reader)
+     return e, d, syscall.StatusOk
+}
+
+func Import(serviceName string) (user []byte, e *Encoder, d *Decoder, status syscall.Status) {
+     serviceFd, status := syncOpenDirectoryPath("/services/" + serviceName)
+     if status != syscall.StatusOk {
+                  log.Fatalf ("Error calling OpenDirectory /services/%s: %v\n", serviceName, status)
+		  return []byte{}, nil, nil, status
+     }
+
+     listeningFd, status := syncAdvertise (serviceFd, serviceName)
+     if status != syscall.StatusOk {
+                log.Fatalf ("Error calling Advertise: %v\n", status)
+	  	return []byte{}, nil, nil, status     
+     }
+
+     user, netFd, status := syncImport (listeningFd)
+     if status != syscall.StatusOk {
+                log.Fatalf ("Error calling syncImport: %v\n", status)
+		return []byte{}, nil, nil, status
+     }
+     writer := ethos.NewWriter(netFd)
+     reader := ethos.NewReader(netFd)
+     syscall.Close(listeningFd)
+     e = NewEncoder(writer)
+     d = NewDecoder(reader)
+     return user, e, d, syscall.StatusOk
+}
+
+type EncoderDecoderFd struct {
+     E *Encoder
+     D *Decoder
+     Fd syscall.Fd
+}
+
+func IpcEncoderDecoder(hostname string, serviceName string) (EncoderDecoderFd, syscall.Status) {
+     var ed EncoderDecoderFd
+     serviceFd, status := syncOpenDirectoryPath("/services/" + serviceName)
+     if status != syscall.StatusOk {
+		  return ed, status
+     }
+
+     sName := serviceName
+     for i:=len(serviceName)-1; i>=0; i-- {
+         if (serviceName[i]=='/') {
+      	   sName = serviceName[i+1:]
+      	}
+     }
+
+
+     netFd, status := syncIpcRepeat(serviceFd, sName, hostname, nil)
+     if status != syscall.StatusOk {
+	    return ed, status	
+     }
+     writer := ethos.NewWriter(netFd)
+     reader := ethos.NewReader(netFd)
+     syscall.Close(serviceFd)
+     e := NewEncoder(writer)
+     d := NewDecoder(reader)
+     ed.E = e
+     ed.D = d
+     ed.Fd = netFd
+     return ed, syscall.StatusOk     
+}
+
+func (ed *EncoderDecoderFd) Close() {
+     syscall.Close(ed.Fd)
+}
+

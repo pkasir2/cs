@@ -1,0 +1,26 @@
+func (e *Encoder) {{.MethodName}}Internal({{.Argument.ArgName}} {{if .Argument.Ptr}}*{{end}}{{if .Argument.PackageName}}{{.Argument.PackageName}}.{{end}}{{.Argument.TypeNameCap}}) (err os.Error){
+     {{$argName := .Argument.ArgName}}
+     {{if .SliceOfBytes}}
+     err = e.SliceOfBytes({{$argName}}[:])
+     if err != nil {
+	   return err
+     }
+     {{else}}
+	{{if .Slice}}
+	     err = e.uint32(uint32(len({{$argName}})))
+     	     if err != nil {
+	     	return err
+	     }
+        {{end}}
+     for _, ele := range {{$argName}} {
+	 {{range .MethodNameAndVar}}
+       	 err = e.{{.MethodName}}({{if .ByPtr}}&{{end}}ele)
+	 if err != nil {
+	   return err
+	 }
+       	 {{end}} 
+     }
+     {{end}} 
+     return nil
+}
+
